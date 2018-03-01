@@ -1,0 +1,19 @@
+http://192.168.80.200 {
+  proxy / localhost:5601
+
+  gzip
+
+  tls off #tls example@example.com #Your email for Let's Encrypt Verification
+
+  #log /var/log/caddy/access.log
+}
+
+http://elk5.example.com {
+  proxy / localhost:5601
+
+  gzip
+
+  tls off #tls example@example.com #Your email for Let's Encrypt Verification
+
+  #log /var/log/caddy/access.log
+}

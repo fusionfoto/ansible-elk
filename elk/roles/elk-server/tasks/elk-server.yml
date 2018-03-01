@@ -1,0 +1,234 @@
+---
+#
+# Deploying ELK stack server using repos
+#
+
+# - name: ELK server deployment
+#  hosts: elk5
+#  remote_user: ubuntu
+#  become: yes
+#  become_method: sudo
+
+#  vars:
+#    cert_hostname: elk5.example.com
+#    elastic_co_key_id: D88E42B4
+#    elastic_co_key_url: 'https://artifacts.elastic.co/GPG-KEY-elasticsearch'
+#    elastic_repo: 'deb https://artifacts.elastic.co/packages/5.x/apt stable main'
+#    ource='https://caddyserver.com/download/linux/amd64?license=personal'
+#    caddy_download='/home/ubuntu/git/ansible-elk/elk/roles/elk-server/files/installers'
+#    caddy_tarzip='caddy_linux_amd64_personal.tar.gz'
+#  tasks:
+
+  ### INSTALL DEPENDENCIES
+
+  - name: Install dependencies and utilities
+    apt:
+      name: "{{item}}"
+      state: present
+    with_items:
+      - aptitude
+      - software-properties-common
+      - apt-transport-https
+      - language-pack-en
+      - python-pip
+      - vim
+      - wget
+      - curl
+      - screen
+      - zip
+      - unzip
+      - apache2-utils
+      - python-passlib
+      - default-jdk
+
+  ### INSTALL ELASTICSEARCH
+
+  - name: Add Elastic.co signing key
+    apt_key:
+      id: D88E42B4
+      url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      state: present
+
+  - name: Add Elastic repo
+    apt_repository:
+      repo: "{{ elastic_repo }}"
+      state: present
+
+  - name: Install Elasticsearch
+    apt:
+      name: elasticsearch
+      state: present
+      update_cache: yes
+
+  - name: Start Elasticsearch on boot
+    systemd:
+      name: elasticsearch
+      enabled: yes
+      masked: no
+
+  - name: Restart Elasticsearch
+    service:
+      name: elasticsearch
+      state: restarted
+
+  ### INSTALL LOGSTASH
+
+  - name: Install Logstash
+    apt:
+      name: logstash
+      state: present
+
+  - name: Start Logstash on boot
+    systemd:
+      name: logstash
+      enabled: yes
+      masked: no
+
+  - service:
+      name: logstash
+      state: restarted
+
+  ### INSTALL KIBANA
+
+  - name: Install Kibana
+    apt:
+      name: kibana
+      state: present
+
+  - name: Start Kibana on boot
+    systemd:
+      name: kibana
+      enabled: yes
+      masked: no
+
+  - service:
+      name: kibana
+      state: restarted
+
+  ### Download CADDY tar.gz
+  - name: download sources
+    get_url: url='{{ caddy_source }}' dest='{{ caddy_download }}/{{ caddy_tarzip }}'
+
+  ### INSTALL CADDY SERVER
+
+  - name: Un-tar Caddy tarball on remote host
+    unarchive: #src='{{ caddy_download }}/{{ caddy_tarzip }}' dest=/tmp
+      src: '{{ caddy_download }}/{{ caddy_tarzip }}'
+      dest: /tmp
+
+  - name: Install Caddy Server
+    copy:
+      remote_src: True
+      src: /tmp/caddy
+      dest: /usr/local/bin/caddy
+      mode: 0755
+      owner: root
+      group: root
+
+  - name: Allow Caddy to bind to privileged ports (80, 443) as non-root user
+    command: setcap 'cap_net_bind_service=+ep' /usr/local/bin/caddy
+    become: true
+    become_user: root
+
+  - name: Set up Caddy directory
+    file:
+      path: /etc/caddy
+      state: directory
+      mode: 0755
+      owner: root
+      group: www-data
+
+  - name: Set up SSL directory for Caddy
+    file:
+      path: /etc/ssl/caddy
+      state: directory
+      mode: 0770
+      owner: www-data
+      group: root
+
+  - name: Put Caddyfile w/ reverse proxy config in place
+    copy:
+      src: files/config/caddy/Caddyfile
+      dest: /etc/caddy/Caddyfile
+      mode: 0755 #0444
+      owner: www-data
+      group: www-data
+
+  - name: Replace caddy HTTP IP 
+    replace:
+      dest: "/etc/caddy/Caddyfile"
+      regexp: '192.168.80.200'
+      replace: "{{ inventory_hostname }}"
+      backup: no
+
+  - name: Replace caddy HTTP IP
+    replace:
+      dest: "/etc/caddy/Caddyfile"
+      regexp: 'elk5.example.com'
+      replace: "elk.swiftstack.org"
+      backup: no
+
+  - name: Create Caddy log directory
+    file:
+      path: /var/log/caddy
+      state: directory
+      owner: www-data
+      group: root
+
+  - name: Install systemd definition for Caddy
+    copy:
+      remote_src: True
+      src: /tmp/init/linux-systemd/caddy.service
+      dest: /etc/systemd/system/caddy.service
+      mode: 0644
+      owner: root
+      group: root
+
+  - name: Force systemd daemon reload
+    systemd:
+      name: caddy
+      daemon_reload: yes
+
+  - name: Start Caddy on boot
+    systemd:
+      name: caddy
+      enabled: yes
+      masked: no
+
+  - name: Restart Caddy
+    service:
+      name: caddy
+      state: restarted
+
+  - name: Uncomment rsyslog - module(load="imudp")
+    replace:
+      dest: "/etc/rsyslog.conf"
+      regexp: '#module\(load=\"imudp\"\)'
+      replace: 'module(load="imudp")'
+      backup: no
+
+  - name: Uncomment rsyslog - input(type="imudp" port="514")
+    replace:
+      dest: "/etc/rsyslog.conf"
+      regexp: '#input\(type=\"imudp\" port=\"514\"\)'
+      replace: 'input(type="imudp" port="514")'
+      backup: no
+
+  - name: Uncomment rsyslog - module(load="imudp")
+    replace:
+      dest: "/etc/rsyslog.conf"
+      regexp: '#module\(load=\"imtcp\"\)'
+      replace: 'module(load="imtcp")'
+      backup: no
+
+  - name: Replace rsyslog - input(type="imtcp" port="514")
+    replace:
+      dest: "/etc/rsyslog.conf"
+      regexp: '#input\(type=\"imtcp\" port=\"514\"\)'
+      replace: 'input(type="imtcp" port="514")'
+      backup: no
+
+  - name: Restart Rsyslog
+    service:
+      name: rsyslog
+      state: restarted

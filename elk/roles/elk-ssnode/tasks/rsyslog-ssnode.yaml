@@ -1,0 +1,20 @@
+#  - name: display message
+#    debug:
+#      msg: "run role {{ elk_role }} and task {{ elk_ssnode_task_run }} - Allow forwarding logs to ELK server {{ elk_server }} via adding 0-elk.conf on SS node {{ inventory_hostname }}"
+
+  - name: run role {{ elk_role }} and task {{ elk_ssnode_task_run }} - Allow forwarding logs to ELK server {{ elk_server }} via adding 0-elk.conf on SS node {{ inventory_hostname }}
+    template:
+      src: "./roles/{{ elk_role }}/tasks/rsyslog.conf.j2"
+      dest: /etc/rsyslog.d/0-elk.conf
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: restart rsyslog service
+    service:
+      name: rsyslog
+      state: restarted
+
+#  - name: restart rsyslog done
+#    debug:
+#      msg: "add rsyslog configuration file 0-elk.conf and restart rsyslog done"

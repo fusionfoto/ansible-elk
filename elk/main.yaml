@@ -1,0 +1,12 @@
+---
+- hosts: all
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  tasks:      # role either elk-server or elk-ssnode
+    - debug:
+        msg: "before we run our role {{ elk_role }}"
+    - include_role:
+        name: "{{ elk_role }}"
+    - debug:
+        msg: "after we ran our role {{ elk_role }}"

@@ -1,0 +1,23 @@
+---
+# To change rsyslog to hook up with elk server
+# Author : Johnny Wang <johnny@swiftstack.com>; Martin <martin@swiftstack.com>
+
+# setup elk server
+  - debug:
+      msg: "running task {{ elk_server_task_run }}.yml now ..."
+      #when:
+      #  - elk_server_setup
+
+  - include_tasks: "./roles/{{elk_role}}/tasks/{{ elk_server_task_run }}.yml"
+    when:
+      - elk_server_setup
+
+# configure elk server
+  - debug:
+      msg: "running task {{ elk_server_config_run }}.yml now ..."
+      #when:
+      #  - elk_server_configuration
+
+  - include_tasks: "./roles/{{elk_role}}/tasks/{{ elk_server_config_run }}.yml"
+    when:
+      - elk_server_configuration

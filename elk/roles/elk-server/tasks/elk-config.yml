@@ -1,0 +1,109 @@
+---
+# Download configuration files from github
+# Configure Logstash, Elasticsearch and Kibana
+#
+
+#- name: elk configuration playbook
+# - hosts: all
+#  remote_user: ubuntu
+#  become: yes
+#  become_method: sudo
+#  vars:
+#    cert_ip: 192.168.201.239
+
+#  tasks:
+  ### download source grok patterns from github swift-grok-patterns
+  # Example read-write git checkout from github
+  - name: download required grok patterns from github
+    git:
+      repo: 'https://github.com/swiftstack/swift-grok-patterns.git'
+      dest: "/tmp/swift-grok-patterns"
+
+  # add path.config: /etc/logstash/conf.d in  logstash.yml
+  - name: add path.config in logstash.yml
+    replace:
+      dest: "/etc/logstash/logstash.yml"
+      regexp: "# path.config:"
+      replace: "path.config: /etc/logstash/conf.d"
+      backup: yes
+
+  # file: path=/etc/logstash/extra_patterns/ state=directory
+  - name: Ensures /etc/logstash/extra_patterns/ dir exists
+    file:
+      dest: "/etc/logstash/extra_patterns/"
+      state: directory
+
+  # copy extra_patterns/swift
+  - name: copy extra_patterns/swift
+    copy:
+      src: "/tmp/swift-grok-patterns/extra_patterns/swift"
+      dest: "/etc/logstash/extra_patterns/swift"
+  #      owner: ss
+  #      group: ss
+  #      mode: 0644
+
+  # file: path=/etc/logstash/conf.d/ state=directory
+  - name: Ensures /etc/logstash/conf.d/ dir exists
+    file:
+      dest: "/etc/logstash/conf.d/"
+      state: directory
+
+  # copy conf.d/*
+  - name: copy conf.d/* to /etc/logstash/conf.d/ dir
+    #synchronize:
+    copy:
+      #mode: pull
+      src: "/tmp/swift-grok-patterns/conf.d/"
+      dest: "/etc/logstash/conf.d"
+
+  - name: create symlink for patterns
+    file:
+      src: '{{ logstash_patterns_symlink }}'
+      dest: /etc/logstash/patterns
+      state: link
+
+  # Restart logstash
+  - name: Restart logstash
+    service:
+      name: logstash
+      state: restarted
+
+  # copy copy elasticsearch/elasticsearch.yml
+  #- name: copy elasticsearch/elasticsearch.yml
+  #  copy:
+  #    src: "/tmp/elk-swift/server/elk_setup/etc/elasticsearch/elasticsearch.yml"
+  #    dest: "/etc/elasticsearch/elasticsearch.yml"
+
+  # uncomment line in kibana/kibana.yml, replace line a to b
+  - name:  uncomment line in elasticsearch.yml with cert_ip
+    replace:
+      dest: "/etc/elasticsearch/elasticsearch.yml"
+      regexp: '#network.host: 192.168.0.1'
+      replace: "network.host: {{ inventory_hostname }}"
+      backup: yes
+
+  # Restart elasticsearch
+  - name: Restart elasticsearch
+    service:
+      name: elasticsearch
+      state: restarted
+
+  # copy copy kibana/kibana.yml
+  #- name: copy kibana/kibana.yml
+  #  copy:
+  #    src: "/tmp/elk-swift/server/elk_setup/etc/kibana/kibana.yml"
+  #    dest: "/etc/kibana/kibana.yml"
+
+  # uncomment line in kibana/kibana.yml, replace line a to b
+  - name:  uncomment line in kibana.yml with cert_ip
+    replace:
+      dest: "/etc/kibana/kibana.yml"
+      regexp: "#elasticsearch.url: \"http://localhost:9200\""
+      replace: "elasticsearch.url: \"http://{{ inventory_hostname }}:9200\""
+      backup: yes
+
+  # Restart elasticsearch
+  - name: Restart kibana
+    service:
+      name: kibana
+      state: restarted

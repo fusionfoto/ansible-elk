@@ -1,0 +1,9 @@
+---
+# To change rsyslog to hook up with elk server
+# Author : Johnny Wang <johnny@swiftstack.com>
+
+# update swift node rsyslog configuration to allow to ship logs to elk
+  - debug:
+      msg: "running task {{ elk_ssnode_task_run }}.yml now ..."
+
+  - include_tasks: "./roles/{{elk_role}}/tasks/{{ elk_ssnode_task_run }}.yaml"

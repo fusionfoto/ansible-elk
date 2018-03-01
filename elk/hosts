@@ -1,0 +1,12 @@
+[all:vars]
+#elk_role=elk-server
+#elk_role=elk-ssnode
+#elastic_repo='deb https://artifacts.elastic.co/packages/5.x/apt stable main'
+elastic_repo='deb https://artifacts.elastic.co/packages/6.x/apt stable main'
+caddy_source='https://caddyserver.com/download/linux/amd64?license=personal'
+caddy_download='/home/ubuntu/git/ansible-elk/elk/roles/elk-server/files/installers'
+caddy_tarzip='caddy_linux_amd64_personal.tar.gz'
+#logstash_patterns_symlink='/usr/share/logstash/vendor/bundle/jruby/1.9/gems/logstash-patterns-core-4.1.1/patterns'
+logstash_patterns_symlink='/usr/share/logstash/vendor/bundle/jruby/2.3.0/gems/logstash-patterns-core-4.1.2/patterns'
+[hosts]
+192.168.22.201
