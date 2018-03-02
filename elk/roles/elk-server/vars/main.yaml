@@ -1,7 +1,10 @@
 # elk: 6.2.0
-elk_server_task_run: elk-server			    # setup elk server when your elk server has internet connectivity
+elk_server_task_run: elk-server			# setup elk server when your elk server has internet connectivity
 elk_server_setup: true
-#elk_server_task_run: elk-server-dpkg		# setup elk server from downloaded packages if your VM doesn't have internet connection
 
-elk_server_config_run: elk-config			# you have elk server and want to sync with grok pattern only
+elk_server_config_run: elk-config		# you have elk server and want to sync with grok pattern only
 elk_server_configuration: true
+
+elk_server_grok_run: elk-grok			# refresh grok pattern only
+elk_server_grok: false
+

@@ -42,18 +42,17 @@ logstash_patterns_symlink='/usr/share/logstash/vendor/bundle/jruby/2.3.0/gems/lo
 192.168.22.201
 ```
 
-#### update local variable *./role/rolefolder/vars/main.yaml* for which task you would like to run e.g setup + configuration
-##### e.g. i want to setup elk server
+#### update local variable `./role/rolefolder/vars/main.yaml` for which task you would like to run e.g setup + configuration
+##### e.g. i want to setup elk server and configure ( add swift grok pattern )
 ```
 # elk: 6.2.0
-elk_server_task_run: elk-server			    # setup elk server when your elk server has internet connectivity
+elk_server_task_run: elk-server         # setup elk server when your elk server has internet connectivity
 elk_server_setup: true
-#elk_server_task_run: elk-server-dpkg		# setup elk server from downloaded packages if your VM doesn't have internet connection
+#elk_server_task_run: elk-server-dpkg   # setup elk server from downloaded packages if your VM doesn't have internet connection
 
-elk_server_config_run: elk-config			# you have elk server and want to sync with grok pattern only
+elk_server_config_run: elk-config       # you have elk server and want to sync with grok pattern only
 elk_server_configuration: true
 ```
-
 
 ### install elk + rsyslog receiver
 ```
@@ -65,12 +64,12 @@ $ ansible-playbook -i hosts main.yaml -e "elk_role=elk-server" -v
 #### update `elk/roles/elk-server/vars/main.yaml` for update grok pattern only ( configuration only )
 ```
 # elk: 6.2.0
-elk_server_task_run: elk-server			    # setup elk server when your elk server has internet connectivity
-elk_server_setup: false                     # skip setup server
-#elk_server_task_run: elk-server-dpkg		# setup elk server from downloaded packages if your VM doesn't have internet connection
+elk_server_task_run: elk-server         # setup elk server when your elk server has internet connectivity
+elk_server_setup: false                 # skip setup server
+#elk_server_task_run: elk-server-dpkg   # setup elk server from downloaded packages if your VM doesn't have internet connection
 
-elk_server_config_run: elk-config			# you have elk server and want to sync with grok pattern only
-elk_server_configuration: true              # reload grok pattern only and restart logstash
+elk_server_config_run: elk-config       # you have elk server and want to sync with grok pattern only
+elk_server_configuration: true          # reload grok pattern only and restart logstash
 ```
 
 ### install install grok pattern
@@ -79,3 +78,8 @@ $ ansible-playbook -i hosts main.yaml -e "elk_role=elk-server"
 or debug mode -vvvv or -check
 $ ansible-playbook -i hosts main.yaml -e "elk_role=elk-server" -v
 ```
+
+#### PS: rsyslog receiver port
+ * rsyslog receiver port is `514` then convert log with json format then shipt to logstash `10514`
+ * logstash get json format log from 10514 then grok pattern filter file it then forward to elasticsearch `9200`
+ * kibana `5601` will display elasticsearch data with port `9200`

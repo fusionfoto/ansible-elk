@@ -19,6 +19,20 @@
       repo: 'https://github.com/swiftstack/swift-grok-patterns.git'
       dest: "/tmp/swift-grok-patterns"
 
+  # copy rsyslog.d/*
+  - name: copy /resource/rsyslog.d/* to /etc/rsyslog.d/ dir
+    #synchronize:
+    copy:
+      #mode: pull
+      src: "/tmp/swift-grok-patterns/resource/rsyslog.d/"
+      dest: "/etc/rsyslog.d"
+
+  # Restart rsyslog
+  - name: Restart rsyslog
+    service:
+      name: rsyslog
+      state: restarted
+
   # add path.config: /etc/logstash/conf.d in  logstash.yml
   - name: add path.config in logstash.yml
     replace:
@@ -61,6 +75,14 @@
       src: '{{ logstash_patterns_symlink }}'
       dest: /etc/logstash/patterns
       state: link
+
+  # using server ip as elasticsearch ip in /etc/logstash/conf.d/30-elk5-output.conf
+  - name:  update elasticsearch ip in /etc/logstash/conf.d/30-elk5-output.conf
+    replace:
+      dest: "/etc/logstash/conf.d/30-elk5-output.conf"
+      regexp: '127.0.0.1'
+      replace: "{{ inventory_hostname }}"
+      backup: yes
 
   # Restart logstash
   - name: Restart logstash

@@ -1,0 +1,51 @@
+---
+# Download configuration files from github
+# Configure Logstash, Elasticsearch and Kibana
+#  tasks:
+  ### download source grok patterns from github swift-grok-patterns
+  # Example read-write git checkout from github
+  - name: download required grok patterns from github
+    git:
+      repo: 'https://github.com/swiftstack/swift-grok-patterns.git'
+      dest: "/tmp/swift-grok-patterns"
+
+  # file: path=/etc/logstash/extra_patterns/ state=directory
+  - name: Ensures /etc/logstash/extra_patterns/ dir exists
+    file:
+      dest: "/etc/logstash/extra_patterns/"
+      state: directory
+
+  # copy extra_patterns/swift
+  - name: copy extra_patterns/swift
+    copy:
+      src: "/tmp/swift-grok-patterns/extra_patterns/swift"
+      dest: "/etc/logstash/extra_patterns/swift"
+
+  # file: path=/etc/logstash/conf.d/ state=directory
+  - name: Ensures /etc/logstash/conf.d/ dir exists
+    file:
+      dest: "/etc/logstash/conf.d/"
+      state: directory
+
+  # copy conf.d/*
+  - name: copy conf.d/* to /etc/logstash/conf.d/ dir
+    #synchronize:
+    copy:
+      #mode: pull
+      src: "/tmp/swift-grok-patterns/conf.d/"
+      dest: "/etc/logstash/conf.d"
+
+  # using server ip as elasticsearch ip in /etc/logstash/conf.d/30-elk5-output.conf
+  - name:  update elasticsearch ip in /etc/logstash/conf.d/30-elk5-output.conf
+    replace:
+      dest: "/etc/logstash/conf.d/30-elk5-output.conf"
+      regexp: '127.0.0.1'
+      replace: "{{ inventory_hostname }}"
+      backup: no
+
+  # Restart logstash
+  - name: Restart logstash
+    service:
+      name: logstash
+      state: restarted
+

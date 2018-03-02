@@ -21,3 +21,13 @@
   - include_tasks: "./roles/{{elk_role}}/tasks/{{ elk_server_config_run }}.yml"
     when:
       - elk_server_configuration
+
+# refresh grok pattern only
+  - debug:
+      msg: "running task {{ elk_server_grok_run }}.yml now ..."
+      #when:
+      #  - elk_server_configuration
+
+  - include_tasks: "./roles/{{elk_role}}/tasks/{{ elk_server_grok_run }}.yml"
+    when:
+      - elk_server_grok
